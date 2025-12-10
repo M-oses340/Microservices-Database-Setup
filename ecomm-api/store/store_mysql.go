@@ -34,3 +34,13 @@ func (ms *MySQLStore) CreateProduct(ctx context.Context, p *Product) (*Product, 
 
 	return p, nil
 }
+func (ms *MySQLStore) GetProduct(ctx context.Context, id int64) (*Product, error) {
+	var p Product
+
+	err := ms.db.GetContext(ctx, &p, `SELECT * FROM products WHERE id = ?`, id)
+	if err != nil {
+		return nil, fmt.Errorf("error getting product: %v", err)
+	}
+
+	return &p, nil
+}
