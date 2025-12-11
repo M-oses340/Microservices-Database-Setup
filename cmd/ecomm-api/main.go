@@ -3,14 +3,37 @@ package main
 import (
 	"log"
 
-	db "github.com/M-oses340/Microservices-Database-Setup/db/migrations"
+	"github.com/M-oses340/Microservices-Database-Setup/ecomm-api/handler"
+	"github.com/ianschenck/envflag"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
+const minSecretKeySize = 32
+
 func main() {
-	db, err := db.NewDatabase()
-	if err != nil {
-		log.Fatal("error opening database: %v", err)
+	var (
+		secretKey = envflag.String("SECRET_KEY", "01234567890123456789012345678901", "secret key for JWT signing")
+		svcAddr   = envflag.String("GRPC_SVC_ADDR", "0.0.0.0:9091", "address where the ecomm-grpc service is listening on")
+	)
+	envflag.Parse()
+
+	if len(*secretKey) < minSecretKeySize {
+		log.Fatalf("SECRET_KEY must be at least %d characters", minSecretKeySize)
 	}
-	defer db.Close()
-	log.Println("Database opened")
+
+	opts := []grpc.DialOption{
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	}
+
+	conn, err := grpc.NewClient(*svcAddr, opts...)
+	if err != nil {
+		log.Fatalf("failed to connect to server: %v", err)
+	}
+	defer conn.Close()
+
+	client := pb.NewEcommClient(conn)
+	hdl := handler.NewHandler(client, *secretKey)
+	handler.RegisterRoutes(hdl)
+	handler.Start(":8080")
 }
