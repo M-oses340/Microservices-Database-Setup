@@ -6,16 +6,16 @@ import (
 	"strings"
 	"time"
 
-	"github.com/M-oses340/Microservices-Database-Setup/ecomm-api/storer"
+	storer2 "github.com/M-oses340/Microservices-Database-Setup/ecomm-grpc/storer"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type Server struct {
-	store *storer.MySQLStorer
+	store *storer2.MySQLStorer
 	pb.UnimplementedEcommServer
 }
 
-func NewServer(storer *storer.MySQLStorer) *Server {
+func NewServer(storer *storer2.MySQLStorer) *Server {
 	return &Server{
 		store: storer,
 	}
@@ -84,9 +84,9 @@ func (s *Server) CreateOrder(ctx context.Context, o *pb.OrderReq) (*pb.OrderRes,
 	if err != nil {
 		return nil, err
 	}
-	order.Status = storer.Pending
+	order.Status = storer2.Pending
 
-	_, err = s.storer.EnqueueNotificationEvent(ctx, &storer.NotificationEvent{
+	_, err = s.storer.EnqueueNotificationEvent(ctx, &storer2.NotificationEvent{
 		UserEmail:   o.GetUserEmail(),
 		OrderStatus: order.Status,
 		OrderID:     order.ID,
@@ -135,7 +135,7 @@ func (s *Server) UpdateOrderStatus(ctx context.Context, o *pb.OrderReq) (*pb.Ord
 		return nil, fmt.Errorf("order %d does not belong to user %d", o.GetId(), o.GetUserId())
 	}
 
-	sOrderStatus := storer.OrderStatus(strings.ToLower(o.GetStatus().String()))
+	sOrderStatus := storer2.OrderStatus(strings.ToLower(o.GetStatus().String()))
 	if sOrderStatus == order.Status {
 		return nil, fmt.Errorf("order status is already %s", order.Status)
 	}
@@ -148,7 +148,7 @@ func (s *Server) UpdateOrderStatus(ctx context.Context, o *pb.OrderReq) (*pb.Ord
 	}
 
 	// enqueue notification event
-	_, err = s.storer.EnqueueNotificationEvent(ctx, &storer.NotificationEvent{
+	_, err = s.storer.EnqueueNotificationEvent(ctx, &storer2.NotificationEvent{
 		UserEmail:   o.GetUserEmail(),
 		OrderStatus: order.Status,
 		OrderID:     order.ID,
@@ -229,7 +229,7 @@ func (s *Server) DeleteUser(ctx context.Context, u *pb.UserReq) (*pb.UserRes, er
 }
 
 func (s *Server) CreateSession(ctx context.Context, sr *pb.SessionReq) (*pb.SessionRes, error) {
-	sess, err := s.storer.CreateSession(ctx, &storer.Session{
+	sess, err := s.storer.CreateSession(ctx, &storer2.Session{
 		ID:           sr.GetId(),
 		UserEmail:    sr.GetUserEmail(),
 		RefreshToken: sr.GetRefreshToken(),
@@ -306,22 +306,22 @@ func (s *Server) ListNotificationEvents(ctx context.Context, lnr *pb.ListNotific
 }
 
 func (s *Server) UpdateNotificationEvent(ctx context.Context, unr *pb.UpdateNotificationEventReq) (*pb.UpdateNotificationEventRes, error) {
-	var responseType storer.NotificationResponseType
+	var responseType storer2.NotificationResponseType
 	switch unr.ResponseType {
 	case pb.NotificationResponseType_SUCCESS:
-		responseType = storer.NotificationSucess
+		responseType = storer2.NotificationSucess
 	case pb.NotificationResponseType_FAILURE:
-		responseType = storer.NotificationFailure
+		responseType = storer2.NotificationFailure
 	default:
 		return nil, fmt.Errorf("invalid response type %s", unr.ResponseType)
 	}
 
 	succeeded, err := s.storer.UpdateNotificationEvent(ctx,
-		&storer.NotificationEvent{
+		&storer2.NotificationEvent{
 			ID:      unr.GetId(),
 			StateID: unr.GetStateId(),
 		},
-		&storer.NotificationState{
+		&storer2.NotificationState{
 			Message: unr.GetMessage(),
 		},
 		responseType)
