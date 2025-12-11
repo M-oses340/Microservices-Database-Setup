@@ -6,22 +6,23 @@ import (
 	"strings"
 	"time"
 
+	"github.com/M-oses340/Microservices-Database-Setup/ecomm-api/storer"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type Server struct {
-	storer *storer.MySQLStorer
+	store *storer.MySQLStorer
 	pb.UnimplementedEcommServer
 }
 
 func NewServer(storer *storer.MySQLStorer) *Server {
 	return &Server{
-		storer: storer,
+		store: storer,
 	}
 }
 
 func (s *Server) CreateProduct(ctx context.Context, req *pb.ProductReq) (*pb.ProductRes, error) {
-	pr, err := s.storer.CreateProduct(ctx, toStorerProduct(req))
+	pr, err := s.store.CreateProduct(ctx, toStoreProduct(req))
 	if err != nil {
 		return nil, err
 	}
