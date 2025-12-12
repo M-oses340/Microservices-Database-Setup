@@ -7,27 +7,26 @@ import (
 	"time"
 
 	"github.com/M-oses340/Microservices-Database-Setup/ecomm-grpc/pb"
-	_ "github.com/M-oses340/Microservices-Database-Setup/ecomm-grpc/storer"
+	storer2 "github.com/M-oses340/Microservices-Database-Setup/ecomm-grpc/storer"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type Server struct {
-	store *storer2.MySQLStorer
+	storer *storer2.MySQLStorer
 	pb.UnimplementedEcommServer
 }
 
 func NewServer(storer *storer2.MySQLStorer) *Server {
 	return &Server{
-		store: storer,
+		storer: storer,
 	}
 }
 
 func (s *Server) CreateProduct(ctx context.Context, req *pb.ProductReq) (*pb.ProductRes, error) {
-	pr, err := s.store.CreateProduct(ctx, toStoreProduct(req))
+	pr, err := s.storer.CreateProduct(ctx, toStoreProduct(req))
 	if err != nil {
 		return nil, err
 	}
-
 	return toPBProductRes(pr), nil
 }
 
@@ -36,7 +35,6 @@ func (s *Server) GetProduct(ctx context.Context, p *pb.ProductReq) (*pb.ProductR
 	if err != nil {
 		return nil, err
 	}
-
 	return toPBProductRes(pr), nil
 }
 
@@ -51,9 +49,7 @@ func (s *Server) ListProducts(ctx context.Context, p *pb.ProductReq) (*pb.ListPr
 		lpr = append(lpr, toPBProductRes(lp))
 	}
 
-	return &pb.ListProductRes{
-		Products: lpr,
-	}, nil
+	return &pb.ListProductRes{Products: lpr}, nil
 }
 
 func (s *Server) UpdateProduct(ctx context.Context, p *pb.ProductReq) (*pb.ProductRes, error) {
@@ -63,6 +59,7 @@ func (s *Server) UpdateProduct(ctx context.Context, p *pb.ProductReq) (*pb.Produ
 	}
 
 	patchProductReq(product, p)
+
 	pr, err := s.storer.UpdateProduct(ctx, product)
 	if err != nil {
 		return nil, err
@@ -76,7 +73,6 @@ func (s *Server) DeleteProduct(ctx context.Context, p *pb.ProductReq) (*pb.Produ
 	if err != nil {
 		return nil, err
 	}
-
 	return &pb.ProductRes{}, nil
 }
 
@@ -105,7 +101,6 @@ func (s *Server) GetOrder(ctx context.Context, o *pb.OrderReq) (*pb.OrderRes, er
 	if err != nil {
 		return nil, err
 	}
-
 	return toPBOrderRes(order), nil
 }
 
@@ -120,13 +115,10 @@ func (s *Server) ListOrders(ctx context.Context, o *pb.OrderReq) (*pb.ListOrderR
 		lor = append(lor, toPBOrderRes(order))
 	}
 
-	return &pb.ListOrderRes{
-		Orders: lor,
-	}, nil
+	return &pb.ListOrderRes{Orders: lor}, nil
 }
 
 func (s *Server) UpdateOrderStatus(ctx context.Context, o *pb.OrderReq) (*pb.OrderRes, error) {
-	// vadliate the order req
 	order, err := s.storer.GetOrderStatusByID(ctx, o.GetId())
 	if err != nil {
 		return nil, err
@@ -143,12 +135,12 @@ func (s *Server) UpdateOrderStatus(ctx context.Context, o *pb.OrderReq) (*pb.Ord
 
 	order.Status = sOrderStatus
 	order.UpdatedAt = toTimePtr(time.Now())
+
 	or, err := s.storer.UpdateOrderStatus(ctx, order)
 	if err != nil {
 		return nil, err
 	}
 
-	// enqueue notification event
 	_, err = s.storer.EnqueueNotificationEvent(ctx, &storer2.NotificationEvent{
 		UserEmail:   o.GetUserEmail(),
 		OrderStatus: order.Status,
@@ -167,7 +159,6 @@ func (s *Server) DeleteOrder(ctx context.Context, o *pb.OrderReq) (*pb.OrderRes,
 	if err != nil {
 		return nil, err
 	}
-
 	return &pb.OrderRes{}, nil
 }
 
@@ -176,7 +167,6 @@ func (s *Server) CreateUser(ctx context.Context, u *pb.UserReq) (*pb.UserRes, er
 	if err != nil {
 		return nil, err
 	}
-
 	return toPBUserRes(user), nil
 }
 
@@ -185,7 +175,6 @@ func (s *Server) GetUser(ctx context.Context, u *pb.UserReq) (*pb.UserRes, error
 	if err != nil {
 		return nil, err
 	}
-
 	return toPBUserRes(user), nil
 }
 
@@ -200,9 +189,7 @@ func (s *Server) ListUsers(ctx context.Context, u *pb.UserReq) (*pb.ListUserRes,
 		lur = append(lur, toPBUserRes(user))
 	}
 
-	return &pb.ListUserRes{
-		Users: lur,
-	}, nil
+	return &pb.ListUserRes{Users: lur}, nil
 }
 
 func (s *Server) UpdateUser(ctx context.Context, u *pb.UserReq) (*pb.UserRes, error) {
@@ -212,6 +199,7 @@ func (s *Server) UpdateUser(ctx context.Context, u *pb.UserReq) (*pb.UserRes, er
 	}
 
 	patchUserReq(user, u)
+
 	ur, err := s.storer.UpdateUser(ctx, user)
 	if err != nil {
 		return nil, err
@@ -225,7 +213,6 @@ func (s *Server) DeleteUser(ctx context.Context, u *pb.UserReq) (*pb.UserRes, er
 	if err != nil {
 		return nil, err
 	}
-
 	return &pb.UserRes{}, nil
 }
 
@@ -270,7 +257,6 @@ func (s *Server) RevokeSession(ctx context.Context, sr *pb.SessionReq) (*pb.Sess
 	if err != nil {
 		return nil, err
 	}
-
 	return &pb.SessionRes{}, nil
 }
 
@@ -279,7 +265,6 @@ func (s *Server) DeleteSession(ctx context.Context, sr *pb.SessionReq) (*pb.Sess
 	if err != nil {
 		return nil, err
 	}
-
 	return &pb.SessionRes{}, nil
 }
 
@@ -301,9 +286,7 @@ func (s *Server) ListNotificationEvents(ctx context.Context, lnr *pb.ListNotific
 		})
 	}
 
-	return &pb.ListNotificationEventsRes{
-		Events: lners,
-	}, nil
+	return &pb.ListNotificationEventsRes{Events: lners}, nil
 }
 
 func (s *Server) UpdateNotificationEvent(ctx context.Context, unr *pb.UpdateNotificationEventReq) (*pb.UpdateNotificationEventRes, error) {
@@ -317,7 +300,8 @@ func (s *Server) UpdateNotificationEvent(ctx context.Context, unr *pb.UpdateNoti
 		return nil, fmt.Errorf("invalid response type %s", unr.ResponseType)
 	}
 
-	succeeded, err := s.storer.UpdateNotificationEvent(ctx,
+	succeeded, err := s.storer.UpdateNotificationEvent(
+		ctx,
 		&storer2.NotificationEvent{
 			ID:      unr.GetId(),
 			StateID: unr.GetStateId(),
@@ -325,12 +309,11 @@ func (s *Server) UpdateNotificationEvent(ctx context.Context, unr *pb.UpdateNoti
 		&storer2.NotificationState{
 			Message: unr.GetMessage(),
 		},
-		responseType)
+		responseType,
+	)
 	if err != nil {
 		return nil, err
 	}
 
-	return &pb.UpdateNotificationEventRes{
-		Succeeded: succeeded,
-	}, nil
+	return &pb.UpdateNotificationEventRes{Succeeded: succeeded}, nil
 }
