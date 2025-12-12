@@ -11,18 +11,10 @@ type Database struct {
 	db *sqlx.DB
 }
 
-func NewDatabase(string) (*Database, error) {
-	// Example: dbAddr = "localhost:3306"
-	dsn := fmt.Sprintf("root:password@tcp(%s)/ecomm?parseTime=true", dbAddr)
-
-	db, err := sqlx.Open("mysql", dsn)
+func NewDatabase(dbAddr string) (*Database, error) {
+	db, err := sqlx.Open("mysql", fmt.Sprintf("root:password@tcp(%s)/ecomm?parseTime=true", dbAddr))
 	if err != nil {
 		return nil, fmt.Errorf("error opening database: %w", err)
-	}
-
-	// Ping to check actual connectivity
-	if err := db.Ping(); err != nil {
-		return nil, fmt.Errorf("database connection failed: %w", err)
 	}
 
 	return &Database{db: db}, nil

@@ -3,6 +3,7 @@ package storer
 import (
 	"context"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/jmoiron/sqlx"
@@ -228,7 +229,10 @@ func (ms *MySQLStorer) execTx(ctx context.Context, fn func(*sqlx.Tx) error) erro
 }
 
 func (ms *MySQLStorer) CreateUser(ctx context.Context, u *User) (*User, error) {
-	res, err := ms.db.NamedExecContext(ctx, "INSERT INTO users (name, email, password, is_admin) VALUES (:name, :email, :password, :is_admin)", u)
+	log.Printf("[DEBUG] Creating user: %+v", u) // <--- debug log
+
+	res, err := ms.db.NamedExecContext(ctx,
+		"INSERT INTO users (name, email, password, is_admin) VALUES (:name, :email, :password, :is_admin)", u)
 	if err != nil {
 		return nil, fmt.Errorf("error inserting user: %w", err)
 	}
@@ -239,6 +243,7 @@ func (ms *MySQLStorer) CreateUser(ctx context.Context, u *User) (*User, error) {
 	}
 	u.ID = id
 
+	log.Printf("[DEBUG] User created with ID: %d", u.ID) // <--- debug log
 	return u, nil
 }
 

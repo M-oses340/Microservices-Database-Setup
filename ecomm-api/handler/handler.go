@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 	"encoding/json"
+	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -28,6 +29,7 @@ func NewHandler(client pb.EcommClient, secretKey string) *handler {
 	}
 }
 
+// ---------------- Product Handlers ----------------
 func (h *handler) createProduct(w http.ResponseWriter, r *http.Request) {
 	var p ProductReq
 	if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
@@ -37,7 +39,8 @@ func (h *handler) createProduct(w http.ResponseWriter, r *http.Request) {
 
 	product, err := h.client.CreateProduct(h.ctx, toPBProductReq(p))
 	if err != nil {
-		http.Error(w, "error creating product", http.StatusInternalServerError)
+		log.Printf("[ERROR] CreateProduct gRPC: %v\n", err)
+		http.Error(w, "error creating product: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -57,7 +60,8 @@ func (h *handler) getProduct(w http.ResponseWriter, r *http.Request) {
 
 	product, err := h.client.GetProduct(h.ctx, &pb.ProductReq{Id: i})
 	if err != nil {
-		http.Error(w, "error getting product", http.StatusInternalServerError)
+		log.Printf("[ERROR] GetProduct gRPC: %v\n", err)
+		http.Error(w, "error getting product: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -70,7 +74,8 @@ func (h *handler) getProduct(w http.ResponseWriter, r *http.Request) {
 func (h *handler) listProducts(w http.ResponseWriter, r *http.Request) {
 	lpr, err := h.client.ListProducts(h.ctx, &pb.ProductReq{})
 	if err != nil {
-		http.Error(w, "error listing products", http.StatusInternalServerError)
+		log.Printf("[ERROR] ListProducts gRPC: %v\n", err)
+		http.Error(w, "error listing products: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -101,7 +106,8 @@ func (h *handler) updateProduct(w http.ResponseWriter, r *http.Request) {
 
 	updated, err := h.client.UpdateProduct(h.ctx, toPBProductReq(p))
 	if err != nil {
-		http.Error(w, "error updating product", http.StatusInternalServerError)
+		log.Printf("[ERROR] UpdateProduct gRPC: %v\n", err)
+		http.Error(w, "error updating product: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -121,13 +127,15 @@ func (h *handler) deleteProduct(w http.ResponseWriter, r *http.Request) {
 
 	_, err = h.client.DeleteProduct(h.ctx, &pb.ProductReq{Id: i})
 	if err != nil {
-		http.Error(w, "error deleting product", http.StatusInternalServerError)
+		log.Printf("[ERROR] DeleteProduct gRPC: %v\n", err)
+		http.Error(w, "error deleting product: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	w.WriteHeader(http.StatusNoContent)
 }
 
+// ---------------- Order Handlers ----------------
 func (h *handler) createOrder(w http.ResponseWriter, r *http.Request) {
 	var o OrderReq
 	if err := json.NewDecoder(r.Body).Decode(&o); err != nil {
@@ -142,7 +150,8 @@ func (h *handler) createOrder(w http.ResponseWriter, r *http.Request) {
 
 	created, err := h.client.CreateOrder(h.ctx, po)
 	if err != nil {
-		http.Error(w, "internal server error", http.StatusInternalServerError)
+		log.Printf("[ERROR] CreateOrder gRPC: %v\n", err)
+		http.Error(w, "internal server error: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -159,7 +168,8 @@ func (h *handler) getOrder(w http.ResponseWriter, r *http.Request) {
 		UserId: claims.ID,
 	})
 	if err != nil {
-		http.Error(w, "internal server error", http.StatusInternalServerError)
+		log.Printf("[ERROR] GetOrder gRPC: %v\n", err)
+		http.Error(w, "internal server error: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -171,7 +181,8 @@ func (h *handler) getOrder(w http.ResponseWriter, r *http.Request) {
 func (h *handler) listOrders(w http.ResponseWriter, r *http.Request) {
 	orders, err := h.client.ListOrders(h.ctx, &pb.OrderReq{})
 	if err != nil {
-		http.Error(w, "internal server error", http.StatusInternalServerError)
+		log.Printf("[ERROR] ListOrders gRPC: %v\n", err)
+		http.Error(w, "internal server error: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -206,7 +217,8 @@ func (h *handler) updateOrderStatus(w http.ResponseWriter, r *http.Request) {
 		Status:    status,
 	})
 	if err != nil {
-		http.Error(w, "failed to update order status", http.StatusInternalServerError)
+		log.Printf("[ERROR] UpdateOrderStatus gRPC: %v\n", err)
+		http.Error(w, "failed to update order status: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -218,20 +230,23 @@ func (h *handler) deleteOrder(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	i, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
-		panic(err)
+		http.Error(w, "error parsing ID", http.StatusBadRequest)
+		return
 	}
 
 	_, err = h.client.DeleteOrder(h.ctx, &pb.OrderReq{
 		Id: i,
 	})
 	if err != nil {
-		http.Error(w, "internal server error", http.StatusInternalServerError)
+		log.Printf("[ERROR] DeleteOrder gRPC: %v\n", err)
+		http.Error(w, "internal server error: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	w.WriteHeader(http.StatusNoContent)
 }
 
+// ---------------- User Handlers ----------------
 func (h *handler) createUser(w http.ResponseWriter, r *http.Request) {
 	var u UserReq
 	if err := json.NewDecoder(r.Body).Decode(&u); err != nil {
@@ -239,17 +254,18 @@ func (h *handler) createUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// hash password
 	hashed, err := util.HashPassword(u.Password)
 	if err != nil {
-		http.Error(w, "error hashing password", http.StatusInternalServerError)
+		log.Printf("[ERROR] HashPassword: %v\n", err)
+		http.Error(w, "error hashing password: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 	u.Password = hashed
 
 	created, err := h.client.CreateUser(h.ctx, toPBUserReq(u))
 	if err != nil {
-		http.Error(w, "error creating user", http.StatusInternalServerError)
+		log.Printf("[ERROR] CreateUser gRPC: %v\n", err)
+		http.Error(w, "error creating user: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -262,7 +278,8 @@ func (h *handler) createUser(w http.ResponseWriter, r *http.Request) {
 func (h *handler) listUsers(w http.ResponseWriter, r *http.Request) {
 	users, err := h.client.ListUsers(h.ctx, &pb.UserReq{})
 	if err != nil {
-		http.Error(w, "error listing users", http.StatusInternalServerError)
+		log.Printf("[ERROR] ListUsers gRPC: %v\n", err)
+		http.Error(w, "error listing users: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -287,7 +304,8 @@ func (h *handler) updateUser(w http.ResponseWriter, r *http.Request) {
 
 	updated, err := h.client.UpdateUser(h.ctx, toPBUserReq(u))
 	if err != nil {
-		http.Error(w, "error updating user", http.StatusInternalServerError)
+		log.Printf("[ERROR] UpdateUser gRPC: %v\n", err)
+		http.Error(w, "error updating user: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -297,7 +315,7 @@ func (h *handler) updateUser(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(res)
 }
 
-func (h handler) deleteUser(w http.ResponseWriter, r *http.Request) {
+func (h *handler) deleteUser(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	i, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
@@ -309,13 +327,15 @@ func (h handler) deleteUser(w http.ResponseWriter, r *http.Request) {
 		Id: i,
 	})
 	if err != nil {
-		http.Error(w, "error deleting user", http.StatusInternalServerError)
+		log.Printf("[ERROR] DeleteUser gRPC: %v\n", err)
+		http.Error(w, "error deleting user: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	w.WriteHeader(http.StatusNoContent)
 }
 
+// ---------------- Auth Handlers ----------------
 func (h *handler) loginUser(w http.ResponseWriter, r *http.Request) {
 	var u LoginUserReq
 	if err := json.NewDecoder(r.Body).Decode(&u); err != nil {
@@ -323,11 +343,10 @@ func (h *handler) loginUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ur, err := h.client.GetUser(h.ctx, &pb.UserReq{
-		Email: u.Email,
-	})
+	ur, err := h.client.GetUser(h.ctx, &pb.UserReq{Email: u.Email})
 	if err != nil {
-		http.Error(w, "error getting user", http.StatusInternalServerError)
+		log.Printf("[ERROR] GetUser gRPC: %v\n", err)
+		http.Error(w, "error getting user: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -337,16 +356,17 @@ func (h *handler) loginUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// create a json web token (JWT) and return it as response
 	accessToken, accessClaims, err := h.TokenMaker.CreateToken(ur.GetId(), ur.GetEmail(), ur.GetIsAdmin(), 15*time.Minute)
 	if err != nil {
-		http.Error(w, "error creating token", http.StatusInternalServerError)
+		log.Printf("[ERROR] CreateToken (access): %v\n", err)
+		http.Error(w, "error creating token: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	refreshToken, refreshClaims, err := h.TokenMaker.CreateToken(ur.GetId(), ur.GetEmail(), ur.GetIsAdmin(), 24*time.Hour)
 	if err != nil {
-		http.Error(w, "error creating token", http.StatusInternalServerError)
+		log.Printf("[ERROR] CreateToken (refresh): %v\n", err)
+		http.Error(w, "error creating token: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -358,7 +378,8 @@ func (h *handler) loginUser(w http.ResponseWriter, r *http.Request) {
 		ExpiresAt:    timestamppb.New(refreshClaims.RegisteredClaims.ExpiresAt.Time),
 	})
 	if err != nil {
-		http.Error(w, "error creating session", http.StatusInternalServerError)
+		log.Printf("[ERROR] CreateSession gRPC: %v\n", err)
+		http.Error(w, "error creating session: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -383,7 +404,8 @@ func (h *handler) logoutUser(w http.ResponseWriter, r *http.Request) {
 		Id: claims.RegisteredClaims.ID,
 	})
 	if err != nil {
-		http.Error(w, "error deleting session", http.StatusInternalServerError)
+		log.Printf("[ERROR] DeleteSession gRPC: %v\n", err)
+		http.Error(w, "error deleting session: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -399,7 +421,7 @@ func (h *handler) renewAccessToken(w http.ResponseWriter, r *http.Request) {
 
 	refreshClaims, err := h.TokenMaker.VerifyToken(req.RefreshToken)
 	if err != nil {
-		http.Error(w, "error verifying token", http.StatusUnauthorized)
+		http.Error(w, "error verifying token: "+err.Error(), http.StatusUnauthorized)
 		return
 	}
 
@@ -407,7 +429,8 @@ func (h *handler) renewAccessToken(w http.ResponseWriter, r *http.Request) {
 		Id: refreshClaims.RegisteredClaims.ID,
 	})
 	if err != nil {
-		http.Error(w, "error getting session", http.StatusInternalServerError)
+		log.Printf("[ERROR] GetSession gRPC: %v\n", err)
+		http.Error(w, "error getting session: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -423,7 +446,8 @@ func (h *handler) renewAccessToken(w http.ResponseWriter, r *http.Request) {
 
 	accessToken, accessClaims, err := h.TokenMaker.CreateToken(refreshClaims.ID, refreshClaims.Email, refreshClaims.IsAdmin, 15*time.Minute)
 	if err != nil {
-		http.Error(w, "error creating token", http.StatusInternalServerError)
+		log.Printf("[ERROR] CreateToken (renew access): %v\n", err)
+		http.Error(w, "error creating token: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -444,7 +468,8 @@ func (h *handler) revokeSession(w http.ResponseWriter, r *http.Request) {
 		Id: claims.RegisteredClaims.ID,
 	})
 	if err != nil {
-		http.Error(w, "error revoking session", http.StatusInternalServerError)
+		log.Printf("[ERROR] RevokeSession gRPC: %v\n", err)
+		http.Error(w, "error revoking session: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
