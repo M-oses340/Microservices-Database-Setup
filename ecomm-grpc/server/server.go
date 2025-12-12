@@ -23,7 +23,7 @@ func NewServer(storer *storer2.MySQLStorer) *Server {
 }
 
 func (s *Server) CreateProduct(ctx context.Context, req *pb.ProductReq) (*pb.ProductRes, error) {
-	pr, err := s.storer.CreateProduct(ctx, toStoreProduct(req))
+	pr, err := s.storer.CreateProduct(ctx, toStorerProduct(req))
 	if err != nil {
 		return nil, err
 	}
