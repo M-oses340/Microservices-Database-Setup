@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/M-oses340/Microservices-Database-Setup/ecomm-grpc/pb"
-	storer2 "github.com/M-oses340/Microservices-Database-Setup/ecomm-grpc/storer"
+	_ "github.com/M-oses340/Microservices-Database-Setup/ecomm-grpc/storer"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
