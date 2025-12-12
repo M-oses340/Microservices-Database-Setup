@@ -4,7 +4,7 @@ import (
 	"log"
 	"net"
 
-	db "github.com/M-oses340/Microservices-Database-Setup/db/migrations"
+	dbpkg "github.com/M-oses340/Microservices-Database-Setup/db/migrations"
 	"github.com/M-oses340/Microservices-Database-Setup/ecomm-grpc/pb"
 	"github.com/M-oses340/Microservices-Database-Setup/ecomm-grpc/server"
 	"github.com/M-oses340/Microservices-Database-Setup/ecomm-grpc/storer"
@@ -20,7 +20,7 @@ func main() {
 	envflag.Parse()
 
 	// instantiate db
-	db, err := db.NewDatabase(*dbAddr)
+	db, err := dbpkg.NewDatabase(*dbAddr)
 	if err != nil {
 		log.Fatalf("error opening database: %v", err)
 	}
@@ -40,9 +40,8 @@ func main() {
 		log.Fatalf("listener failed: %v", err)
 	}
 
-	log.Printf("server listening on %s", *svcAddr)
-	err = grpcSrv.Serve(listener)
-	if err != nil {
+	log.Printf("gRPC server listening on %s", *svcAddr)
+	if err := grpcSrv.Serve(listener); err != nil {
 		log.Fatalf("failed to serve: %v", err)
 	}
 }

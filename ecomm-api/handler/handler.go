@@ -362,6 +362,7 @@ func (h *handler) loginUser(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "error creating token: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
+	log.Printf("[DEBUG] AccessToken Claims: %+v\n", accessClaims)
 
 	refreshToken, refreshClaims, err := h.TokenMaker.CreateToken(ur.GetId(), ur.GetEmail(), ur.GetIsAdmin(), 24*time.Hour)
 	if err != nil {
@@ -369,6 +370,7 @@ func (h *handler) loginUser(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "error creating token: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
+	log.Printf("[DEBUG] RefreshToken Claims: %+v\n", refreshClaims)
 
 	session, err := h.client.CreateSession(h.ctx, &pb.SessionReq{
 		Id:           refreshClaims.RegisteredClaims.ID,
@@ -421,9 +423,11 @@ func (h *handler) renewAccessToken(w http.ResponseWriter, r *http.Request) {
 
 	refreshClaims, err := h.TokenMaker.VerifyToken(req.RefreshToken)
 	if err != nil {
+		log.Printf("[ERROR] VerifyToken: %v\n", err)
 		http.Error(w, "error verifying token: "+err.Error(), http.StatusUnauthorized)
 		return
 	}
+	log.Printf("[DEBUG] Verified RefreshToken Claims: %+v\n", refreshClaims)
 
 	session, err := h.client.GetSession(h.ctx, &pb.SessionReq{
 		Id: refreshClaims.RegisteredClaims.ID,
@@ -450,6 +454,7 @@ func (h *handler) renewAccessToken(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "error creating token: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
+	log.Printf("[DEBUG] New AccessToken Claims: %+v\n", accessClaims)
 
 	res := RenewAccessTokenRes{
 		AccessToken:          accessToken,
