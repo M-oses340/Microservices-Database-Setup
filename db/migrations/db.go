@@ -11,7 +11,7 @@ type Database struct {
 	db *sqlx.DB
 }
 
-func NewDatabase() (*Database, error) {
+func NewDatabase(string) (*Database, error) {
 	// Example: dbAddr = "localhost:3306"
 	dsn := fmt.Sprintf("root:password@tcp(%s)/ecomm?parseTime=true", dbAddr)
 

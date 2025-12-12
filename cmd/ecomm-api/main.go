@@ -4,6 +4,7 @@ import (
 	"log"
 
 	"github.com/M-oses340/Microservices-Database-Setup/ecomm-api/handler"
+	"github.com/M-oses340/Microservices-Database-Setup/ecomm-grpc/pb"
 	"github.com/ianschenck/envflag"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
