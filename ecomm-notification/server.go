@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"strings"
 
@@ -57,12 +58,18 @@ func (s *Server) processNotificationEvents(ctx context.Context) error {
 		go func(ev *pb.NotificationEvent) {
 			defer wg.Done()
 			defer sem.Release(1)
+			err := s.sendNotification(ctx, ev)
+			err := s.updateNotificationEvent(ctx, ev, err)
+			if err != nil {
+				fmt.Printf("processing event: %v\n", err)
+			}
 
 		}(ev)
 
 	}
 	go func() {
 		wg.Wait()
+
 	}()
 	return nil
 }
@@ -73,7 +80,14 @@ func (s *Server) sendNotification(ctx context.Context, ev *pb.NotificationEvent)
 	m.SetHeader("Subject", "email from ecomm")
 	m.SetBody("text/plain", fmt.Sprintf("Order %d is %s", strings.ToLower(ev.OrderStatus.String())))
 
-	gomail.NewDialer("smtp.gmail.com", 465, s.adminInfo.Email, s.adminInfo.Password).DialAndSend(m)
+	d := gomail.NewDialer("smtp.gmail.com", 587, s.adminInfo.Email, s.adminInfo.Password)
+	d.TLSConfig = &tls.Config{InsecureSkipVerify: true}
+	if err := d.DialAndSend(m); err != nil {
+		return err
+	}
 	return nil
 
+}
+func (s *Server) updateNotificationEvent(ctx context.Context, ev *pb.NotificationEvent, err error) error {
+	
 }
