@@ -34,6 +34,10 @@ func (s *Server) Run(ctx context.Context) {
 	ticker := time.NewTicker(30 * time.Second)
 	defer ticker.Stop()
 	for {
+		err := s.processNotificationEvents(ctx)
+		if err != nil {
+			fmt.Printf("failed to process notification events: %v\n", err)
+		}
 		select {
 		case <-ticker.C:
 		case <-ctx.Done():
@@ -59,7 +63,7 @@ func (s *Server) processNotificationEvents(ctx context.Context) error {
 			defer wg.Done()
 			defer sem.Release(1)
 			err := s.sendNotification(ctx, ev)
-			err := s.updateNotificationEvent(ctx, ev, err)
+			err = s.updateNotificationEvent(ctx, ev, err)
 			if err != nil {
 				fmt.Printf("processing event: %v\n", err)
 			}
