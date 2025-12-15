@@ -73,6 +73,7 @@ func (s *Server) sendNotification(ctx context.Context, ev *pb.NotificationEvent)
 	m.SetHeader("Subject", "email from ecomm")
 	m.SetBody("text/plain", fmt.Sprintf("Order %d is %s", strings.ToLower(ev.OrderStatus.String())))
 
+	gomail.NewDialer("stmp.gmail.com", 465, s.adminInfo.Email, s.adminInfo.Password).DialAndSend(m)
 	return nil
 
 }
