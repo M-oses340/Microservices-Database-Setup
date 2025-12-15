@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	"github.com/M-oses340/Microservices-Database-Setup/ecomm-grpc/pb"
@@ -34,7 +35,9 @@ func (s *Server) processNotificationEvents(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	var wg sync.WaitGroup
 	for _, ev := range res.Events {
+		wg.Add(1)
 		go func(ev *pb.NotificationEvent) {
 
 		}(ev)
