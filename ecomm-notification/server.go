@@ -89,5 +89,23 @@ func (s *Server) sendNotification(ctx context.Context, ev *pb.NotificationEvent)
 
 }
 func (s *Server) updateNotificationEvent(ctx context.Context, ev *pb.NotificationEvent, err error) error {
-	
+	req := &pb.UpdateNotificationEventReq{
+		Id:      ev.Id,
+		OrderId: ev.OrderId,
+		StateId: ev.StateId,
+	}
+	switch err {
+	case nil:
+		req.ResponseType = pb.NotificationResponseType_SUCCESS
+		req.Message = "notification sent successfully"
+	default:
+		req.ResponseType = pb.NotificationResponseType_FAILURE
+		req.Message = fmt.Sprintf("%v", err)
+	}
+	fmt.Printf("updating  event: %v\n", req)
+	_, err = s.client.UpdateNotificationEvent(ctx, req)
+	if err != nil {
+		return fmt.Errorf("failed to update notification event: %v", err)
+	}
+	return nil
 }
