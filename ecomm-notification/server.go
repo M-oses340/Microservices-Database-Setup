@@ -2,6 +2,8 @@ package server
 
 import (
 	"context"
+	"fmt"
+	"strings"
 
 	"sync"
 	"time"
@@ -67,5 +69,10 @@ func (s *Server) processNotificationEvents(ctx context.Context) error {
 func (s *Server) sendNotification(ctx context.Context, ev *pb.NotificationEvent) error {
 	m := gomail.NewMessage()
 	m.SetHeader("From", s.adminInfo.Email)
+	m.SetHeader("To", ev.UserEmail)
+	m.SetHeader("Subject", "email from ecomm")
+	m.SetBody("text/plain", fmt.Sprintf("Order %d is %s", strings.ToLower(ev.OrderStatus.String())))
+
+	return nil
 
 }
