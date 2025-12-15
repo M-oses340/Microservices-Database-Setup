@@ -17,8 +17,9 @@ func NewServer(client pb.EcommClient) *Server {
 	}
 }
 func (s *Server) Run(ctx context.Context) error {
-	time.NewTicker(30 * time.Second)
+	ticker := time.NewTicker(30 * time.Second)
+	defer ticker.Stop()
 	for {
-		
+
 	}
 }
