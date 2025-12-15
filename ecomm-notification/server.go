@@ -20,6 +20,12 @@ func (s *Server) Run(ctx context.Context) error {
 	ticker := time.NewTicker(30 * time.Second)
 	defer ticker.Stop()
 	for {
+		select {
+		case <-ticker.C:
+		case <-ctx.Done():
+			return nil
+
+		}
 
 	}
 }
