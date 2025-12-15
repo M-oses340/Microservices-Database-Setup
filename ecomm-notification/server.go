@@ -16,16 +16,28 @@ func NewServer(client pb.EcommClient) *Server {
 		client: client,
 	}
 }
-func (s *Server) Run(ctx context.Context) error {
+func (s *Server) Run(ctx context.Context) {
 	ticker := time.NewTicker(30 * time.Second)
 	defer ticker.Stop()
 	for {
 		select {
 		case <-ticker.C:
 		case <-ctx.Done():
-			return nil
+			return
 
 		}
+
+	}
+}
+func (s *Server) processNotificationEvents(ctx context.Context) error {
+	res, err := s.client.ListNotificationEvents(ctx, &pb.ListNotificationEventsReq{})
+	if err != nil {
+		return err
+	}
+	for _, ev := range res.Events {
+		go func(ev *pb.NotificationEvent) {
+
+		}(ev)
 
 	}
 }
