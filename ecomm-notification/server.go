@@ -7,3 +7,7 @@ import (
 type Server struct {
 	client pb.EcommClient
 }
+
+func NewServer(client pb.EcommClient) *Server {
+	return &Server{client: client}
+}
