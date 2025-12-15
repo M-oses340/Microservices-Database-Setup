@@ -40,4 +40,5 @@ func (s *Server) processNotificationEvents(ctx context.Context) error {
 		}(ev)
 
 	}
+	return nil
 }
