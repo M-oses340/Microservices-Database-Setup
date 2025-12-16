@@ -1,0 +1,5 @@
+#!/bin/bash
+
+# build dockerfile
+echo "=> building containers" > /dev/stderr
+dev/build
