@@ -3,11 +3,9 @@ package main
 import (
 	"context"
 	"log"
-	"os"
-	"os/signal"
-	"syscall"
 
 	"github.com/M-oses340/Microservices-Database-Setup/ecomm-grpc/pb"
+	server "github.com/M-oses340/Microservices-Database-Setup/ecomm-notification"
 	"github.com/ianschenck/envflag"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -15,42 +13,32 @@ import (
 
 func main() {
 	var (
-		grpcAddr = envflag.String(
-			"GRPC_SVC_ADDR",
-			"0.0.0.0:9091",
-			"address where ecomm-grpc service is listening",
-		)
+		svcAddr    = envflag.String("GRPC_SVC_ADDR", "0.0.0.0:9091", "address where the ecomm-grpc service is listening on")
+		adminEmail = envflag.String("ADMIN_EMAIL", "mosesomwa7@gmail.com", "admin email")
+		adminPass  = envflag.String("ADMIN_PASSWORD", "", "admin email")
 	)
 	envflag.Parse()
 
-	log.Printf("connecting to ecomm-grpc at %s", *grpcAddr)
-
-	// ---- gRPC connection ----
-	conn, err := grpc.Dial(
-		*grpcAddr,
+	opts := []grpc.DialOption{
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
-	)
+	}
+
+	conn, err := grpc.NewClient(*svcAddr, opts...)
 	if err != nil {
-		log.Fatalf("failed to dial gRPC service: %v", err)
+		log.Fatalf("failed to connect to server: %v", err)
 	}
 	defer conn.Close()
 
-	// ---- gRPC client ----
 	client := pb.NewEcommClient(conn)
+	srv := server.NewServer(client, &server.AdminInfo{
+		Email:    *adminEmail,
+		Password: *adminPass,
+	})
 
-	// ---- Context with graceful shutdown ----
-	ctx, stop := signal.NotifyContext(
-		context.Background(),
-		os.Interrupt,
-		syscall.SIGTERM,
-	)
-	defer stop()
-
-	log.Println("ecomm-notification service started")
-
-	// ---- Example: block until shutdown ----
-	<-ctx.Done()
-
-	log.Println("ecomm-notification service stopped")
-	_ = client // keeps client available for future notification logic
+	done := make(chan struct{})
+	go func() {
+		srv.Run(context.Background())
+		done <- struct{}{}
+	}()
+	<-done
 }
